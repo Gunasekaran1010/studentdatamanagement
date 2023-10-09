@@ -13,9 +13,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.SchoolMagement.model.Bankaccount;
+import com.example.SchoolMagement.model.LoginResponse;
 import com.example.SchoolMagement.model.Student;
 import com.example.SchoolMagement.model.User;
 import com.example.SchoolMagement.repositery.StudentInfo;
+import com.example.SchoolMagement.repositery.Studentbankacoount;
 import com.example.SchoolMagement.service.UserService;
 
 @RestController
@@ -25,9 +28,12 @@ public class LoginController {
     
     @Autowired
     private StudentInfo studentInfo;
+    @Autowired
+    private Studentbankacoount stubank;
+
     
     @PostMapping("/login")
-    public ResponseEntity<Student> login(@RequestBody Map<String, String> credentials) {
+    public ResponseEntity<LoginResponse> login(@RequestBody Map<String, String> credentials)  {
         String username = credentials.get("username");
         String password = credentials.get("password");
         
@@ -35,11 +41,13 @@ public class LoginController {
         if (userOptional.isPresent()) {
             User user = userOptional.get();
             if (user.getPassword().equals(password)) {
-                // User authenticated successfully
-                // Assuming you have a method to get student by user id
                 Optional<Student> student = studentInfo.findById(user.getId().intValue());
-                if (student.isPresent()) {
-                    return ResponseEntity.ok(student.get());
+                Optional<Bankaccount> bankacc = stubank.findById(user.getId().intValue());
+                if (student.isPresent() && bankacc.isPresent()) {
+                    LoginResponse response = new LoginResponse();
+                    response.setStudent(student.get());
+                    response.setBankAccount(bankacc.get());
+                    return ResponseEntity.ok(response);
                 } else {
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
                 }
